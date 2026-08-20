@@ -130,11 +130,18 @@ func (s *Service) ListRecords(ctx context.Context, p Principal, pageNum, pageSiz
 		return Page[DailyRecord]{}, ErrUnauthenticated
 	}
 	pageNum, pageSize = normalizePage(pageNum, pageSize)
-	if startDate == "" && endDate == "" {
-		startDate, endDate = "", ""
+	if startDate != "" {
+		if _, err := timeParseDate(startDate); err != nil {
+			return Page[DailyRecord]{}, fmt.Errorf("%w: startDate must be YYYY-MM-DD", ErrValidation)
+		}
 	}
-	if startDate != "" && endDate != "" && startDate == endDate {
-		endDate = startDate
+	if endDate != "" {
+		if _, err := timeParseDate(endDate); err != nil {
+			return Page[DailyRecord]{}, fmt.Errorf("%w: endDate must be YYYY-MM-DD", ErrValidation)
+		}
+	}
+	if startDate != "" && endDate != "" && startDate > endDate {
+		return Page[DailyRecord]{}, fmt.Errorf("%w: startDate cannot be after endDate", ErrValidation)
 	}
 	where := []string{"1=1"}
 	args := []any{}
